@@ -3,10 +3,10 @@
   "compilerOptions": {
     "outDir": "dist",
     "sourceMap": true,
-      "target": "ES2022",
-  "module": "NodeNext",
-  "esModuleInterop": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "esModuleInterop": true,
+    "types": ["jest", "node"]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
+  "include": ["src/**/*.ts"]
 }
