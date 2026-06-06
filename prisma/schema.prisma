@@ -5,9 +5,106 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "../src/generated"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum Turno {
+  MANHA
+  TARDE
+  NOITE
+}
+
+model Escola {
+  id           Int           @id @default(autoincrement())
+  nome         String        @db.VarChar(150)
+  cnpj         String        @unique @db.VarChar(18)
+
+  coordenadores Coordenador[]
+  professores   Professor[]
+  turmas        Turma[]
+  disciplinas   Disciplina[]
+
+  @@map("escola")
+}
+
+model Coordenador {
+  id        Int    @id @default(autoincrement())
+  escola_id Int
+  nome      String @db.VarChar(150)
+  email     String @unique @db.VarChar(100)
+
+  escola      Escola      @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+  professores Professor[]
+
+  @@map("coordenador")
+}
+
+model Professor {
+  id              Int  @id @default(autoincrement())
+  escola_id       Int
+  coordenador_id  Int?
+  nome            String @db.VarChar(150)
+  email           String @unique @db.VarChar(100)
+
+  escola       Escola       @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+  coordenador  Coordenador? @relation(fields: [coordenador_id], references: [id], onDelete: SetNull)
+  turmas       ProfessorTurma[]
+
+  @@index([escola_id])
+  @@map("professor")
+}
+
+model Turma {
+  id         Int    @id @default(autoincrement())
+  escola_id  Int
+  nome       String @db.VarChar(50)
+  ano_letivo Int
+
+  escola    Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+  alunos    Aluno[]
+  professores ProfessorTurma[]
+
+  @@index([escola_id])
+  @@map("turma")
+}
+
+model Disciplina {
+  id                     Int    @id @default(autoincrement())
+  escola_id              Int
+  nome                   String @db.VarChar(100)
+  carga_horaria_semanal  Int
+
+  escola Escola @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+
+  @@index([escola_id])
+  @@map("disciplina")
+}
+
+model Aluno {
+  id       Int    @id @default(autoincrement())
+  turma_id Int
+  nome     String @db.VarChar(150)
+  email    String @unique @db.VarChar(100)
+  turno    Turno
+
+  turma Turma @relation(fields: [turma_id], references: [id], onDelete: Cascade)
+
+  @@index([turma_id])
+  @@map("aluno")
+}
+
+model ProfessorTurma {
+  professor_id Int
+  turma_id     Int
+
+  professor Professor @relation(fields: [professor_id], references: [id], onDelete: Cascade)
+  turma     Turma     @relation(fields: [turma_id], references: [id], onDelete: Cascade)
+
+  @@id([professor_id, turma_id])
+  @@map("professor_turma")
 }
