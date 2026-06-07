@@ -4,7 +4,7 @@ services:
     image: "postgres:latest"
     container_name: foca_postgres
     ports:
-      - "5432:5432"
+      - "3015:5432"
     environment:
       POSTGRES_USER: foca_user
       POSTGRES_PASSWORD: password

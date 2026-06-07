@@ -19,6 +19,29 @@ enum Turno {
   NOITE
 }
 
+enum Role {
+  ALUNO
+  PROFESSOR
+  COORDENADOR
+}
+
+model Usuario {
+  id         Int      @id @default(autoincrement())
+  nome       String   @db.VarChar(150)
+  email      String   @unique @db.VarChar(100)
+  senha_hash String   @db.VarChar(255)
+  role       Role
+  ativo      Boolean  @default(true)
+  criado_em  DateTime @default(now())
+
+  coordenador Coordenador?
+  professor   Professor?
+  aluno       Aluno?
+
+  @@index([role])
+  @@map("usuario")
+}
+
 model Escola {
   id           Int           @id @default(autoincrement())
   nome         String        @db.VarChar(150)
@@ -33,11 +56,11 @@ model Escola {
 }
 
 model Coordenador {
-  id        Int    @id @default(autoincrement())
-  escola_id Int
-  nome      String @db.VarChar(150)
-  email     String @unique @db.VarChar(100)
+  id         Int @id @default(autoincrement())
+  usuario_id Int @unique
+  escola_id  Int
 
+  usuario     Usuario     @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
   escola      Escola      @relation(fields: [escola_id], references: [id], onDelete: Cascade)
   professores Professor[]
 
@@ -45,17 +68,18 @@ model Coordenador {
 }
 
 model Professor {
-  id              Int  @id @default(autoincrement())
-  escola_id       Int
-  coordenador_id  Int?
-  nome            String @db.VarChar(150)
-  email           String @unique @db.VarChar(100)
+  id             Int  @id @default(autoincrement())
+  usuario_id     Int  @unique
+  escola_id      Int
+  coordenador_id Int?
 
-  escola       Escola       @relation(fields: [escola_id], references: [id], onDelete: Cascade)
-  coordenador  Coordenador? @relation(fields: [coordenador_id], references: [id], onDelete: SetNull)
-  turmas       ProfessorTurma[]
+  usuario     Usuario          @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  escola      Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+  coordenador Coordenador?     @relation(fields: [coordenador_id], references: [id], onDelete: SetNull)
+  turmas      ProfessorTurma[]
 
   @@index([escola_id])
+  @@index([coordenador_id])
   @@map("professor")
 }
 
@@ -65,8 +89,8 @@ model Turma {
   nome       String @db.VarChar(50)
   ano_letivo Int
 
-  escola    Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
-  alunos    Aluno[]
+  escola      Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+  alunos      Aluno[]
   professores ProfessorTurma[]
 
   @@index([escola_id])
@@ -74,37 +98,41 @@ model Turma {
 }
 
 model Disciplina {
-  id                     Int    @id @default(autoincrement())
-  escola_id              Int
-  nome                   String @db.VarChar(100)
-  carga_horaria_semanal  Int
+  id                    Int    @id @default(autoincrement())
+  escola_id             Int
+  nome                  String @db.VarChar(100)
+  carga_horaria_semanal Int
 
-  escola Escola @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+  escola      Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
+  professores ProfessorTurma[]
 
+  @@unique([escola_id, nome])
   @@index([escola_id])
   @@map("disciplina")
 }
 
 model Aluno {
-  id       Int    @id @default(autoincrement())
-  turma_id Int
-  nome     String @db.VarChar(150)
-  email    String @unique @db.VarChar(100)
-  turno    Turno
+  id         Int   @id @default(autoincrement())
+  usuario_id Int   @unique
+  turma_id   Int
+  turno      Turno
 
-  turma Turma @relation(fields: [turma_id], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  turma   Turma   @relation(fields: [turma_id], references: [id], onDelete: Cascade)
 
   @@index([turma_id])
   @@map("aluno")
 }
 
 model ProfessorTurma {
-  professor_id Int
-  turma_id     Int
+  professor_id  Int
+  turma_id      Int
+  disciplina_id Int
 
-  professor Professor @relation(fields: [professor_id], references: [id], onDelete: Cascade)
-  turma     Turma     @relation(fields: [turma_id], references: [id], onDelete: Cascade)
+  professor  Professor  @relation(fields: [professor_id], references: [id], onDelete: Cascade)
+  turma      Turma      @relation(fields: [turma_id], references: [id], onDelete: Cascade)
+  disciplina Disciplina @relation(fields: [disciplina_id], references: [id], onDelete: Cascade)
 
-  @@id([professor_id, turma_id])
+  @@id([professor_id, turma_id, disciplina_id])
   @@map("professor_turma")
 }
