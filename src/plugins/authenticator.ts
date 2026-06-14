@@ -7,7 +7,7 @@ import { AuthorizeResponse } from '../models/auth/types/authenticate.type';
 declare module 'fastify' {
   interface FastifyInstance {
     authenticator: AuthenticatorAdapter;
-    authenticate(request: FastifyRequest, reply: FastifyReply): Promise<AuthorizeResponse>;
+    authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void>;
   }
 
   interface FastifyRequest {
@@ -17,9 +17,6 @@ declare module 'fastify' {
 
 const authenticatorPlugin: FastifyPluginAsync = fp(async (fastify) => {
   const authenticator = new AuthenticatorAdapter(process.env.JWT_SECRET as string, jwt);
-
-  fastify.decorate('authenticator', authenticator);
-  fastify.decorateRequest('user', null);
 
   fastify.decorate('authenticate', async (request: FastifyRequest, _reply: FastifyReply) => {
     const [, token] = request.headers.authorization?.split(' ') ?? [];
@@ -38,7 +35,6 @@ const authenticatorPlugin: FastifyPluginAsync = fp(async (fastify) => {
     // TODO: buscar o usuário no banco de dados a partir de payload.userId
 
     request.user = payload;
-    return payload;
   });
 });
 
