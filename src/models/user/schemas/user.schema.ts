@@ -40,3 +40,41 @@ export const updateUserSchema = z
     coordenador_id: z.number().int().positive().nullable().optional(),
   })
   .strict();
+
+export const userIdParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
+
+const alunoRelationSchema = z.object({
+  id: z.number().int(),
+  usuario_id: z.number().int(),
+  turma_id: z.number().int(),
+  turno: z.enum(Turno),
+});
+
+const professorRelationSchema = z.object({
+  id: z.number().int(),
+  usuario_id: z.number().int(),
+  escola_id: z.number().int(),
+  coordenador_id: z.number().int().nullable(),
+});
+
+const coordenadorRelationSchema = z.object({
+  id: z.number().int(),
+  usuario_id: z.number().int(),
+  escola_id: z.number().int(),
+});
+
+export const safeUserSchema = z.object({
+  id: z.number().int(),
+  nome: z.string(),
+  email: z.string(),
+  role: z.enum(Role),
+  ativo: z.boolean(),
+  criado_em: z.date(),
+  aluno: alunoRelationSchema.nullable(),
+  professor: professorRelationSchema.nullable(),
+  coordenador: coordenadorRelationSchema.nullable(),
+});
+
+export const safeUserListSchema = z.array(safeUserSchema);
