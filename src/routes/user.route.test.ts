@@ -3,9 +3,9 @@ import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod
 import { userRoutes } from './user.route';
 import errorHandlerPlugin from '../plugins/errorHandler';
 import { Role, Turno } from '../generated/enums';
-import { UsuarioComRelacoes } from '../models/user/types/user.types';
+import { UserWithRelations } from '../models/user/types/user.types';
 
-function makeUsuario(overrides: Partial<UsuarioComRelacoes> = {}): UsuarioComRelacoes {
+function makeUsuario(overrides: Partial<UserWithRelations> = {}): UserWithRelations {
   return {
     id: 1,
     nome: 'Fulano',
@@ -63,17 +63,47 @@ describe('user routes', () => {
     );
   });
 
-  it('GET /user/me retorna o usuário sem senha_hash e com criado_em serializado', async () => {
-    const usuario = makeUsuario();
-    const prisma = { usuario: { findUnique: jest.fn().mockResolvedValue(usuario) } };
-    const app = buildApp(prisma, { userId: 1, role: Role.ALUNO });
+  it('GET /user retorna 403 para Aluno', async () => {
+    const app = buildApp({}, { userId: 1, role: Role.ALUNO });
 
-    const res = await app.inject({ method: 'GET', url: '/user/me' });
+    const res = await app.inject({ method: 'GET', url: '/user' });
 
-    expect(res.statusCode).toBe(200);
-    const body = res.json();
-    expect(body).not.toHaveProperty('senha_hash');
-    expect(body.criado_em).toBe('2024-01-01T00:00:00.000Z');
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('POST /user retorna 403 para Aluno', async () => {
+    const app = buildApp({}, { userId: 1, role: Role.ALUNO });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/user',
+      payload: {
+        nome: 'Aluno Teste',
+        email: 'aluno@example.com',
+        senha: 'senha1234',
+        role: Role.ALUNO,
+        turma_id: 1,
+        turno: Turno.MANHA,
+      },
+    });
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('PATCH /user/:id retorna 403 para não-Coordenador', async () => {
+    const app = buildApp({}, { userId: 1, role: Role.PROFESSOR });
+
+    const res = await app.inject({ method: 'PATCH', url: '/user/1', payload: { nome: 'Novo' } });
+
+    expect(res.statusCode).toBe(403);
+  });
+
+  it('DELETE /user/:id retorna 403 para não-Coordenador', async () => {
+    const app = buildApp({}, { userId: 1, role: Role.PROFESSOR });
+
+    const res = await app.inject({ method: 'DELETE', url: '/user/1' });
+
+    expect(res.statusCode).toBe(403);
   });
 
   it('DELETE /user/:id remove o usuário e retorna 204 sem corpo', async () => {

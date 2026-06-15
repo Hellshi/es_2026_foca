@@ -41,6 +41,30 @@ export const updateUserSchema = z
   })
   .strict();
 
+export const createAlunoRepositoryDataSchema = createAlunoSchema
+  .omit({ role: true, senha: true })
+  .extend({ senha_hash: z.string() });
+
+export const createProfessorRepositoryDataSchema = createProfessorSchema
+  .omit({ role: true, senha: true })
+  .extend({
+    senha_hash: z.string(),
+    escola_id: z.number().int().positive(),
+    coordenador_id: z.number().int().positive(),
+  });
+
+export const createCoordenadorRepositoryDataSchema = createCoordenadorSchema
+  .omit({ role: true, senha: true })
+  .extend({ senha_hash: z.string() });
+
+export const updateUserRepositoryDataSchema = updateUserSchema
+  .pick({ nome: true, email: true, ativo: true })
+  .strip();
+
+export const updateRoleProfileRepositoryDataSchema = updateUserSchema
+  .pick({ turma_id: true, turno: true, escola_id: true, coordenador_id: true })
+  .strip();
+
 export const userIdParamSchema = z.object({
   id: z.coerce.number().int().positive(),
 });

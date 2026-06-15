@@ -2,11 +2,11 @@ import { Role, Turno } from '../../generated/enums';
 import { UserRepository } from '../../repositories/user/UserRepository';
 import { UserService } from './User';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
-import { UsuarioComRelacoes } from './types/user.types';
+import { UserWithRelations } from './types/user.types';
 
 jest.mock('../../repositories/user/UserRepository');
 
-function makeUsuario(overrides: Partial<UsuarioComRelacoes> = {}): UsuarioComRelacoes {
+function makeUsuario(overrides: Partial<UserWithRelations> = {}): UserWithRelations {
   return {
     id: 1,
     nome: 'Fulano',
@@ -46,11 +46,6 @@ describe('UserService', () => {
       await expect(service.create(actor, { role: Role.ALUNO })).rejects.toThrow(ValidationError);
     });
 
-    it('Aluno não pode criar nenhum usuário', async () => {
-      const actor = { userId: 1, role: Role.ALUNO };
-      await expect(service.create(actor, alunoPayload)).rejects.toThrow(ForbiddenError);
-    });
-
     it('Professor pode criar Aluno', async () => {
       const actor = { userId: 2, role: Role.PROFESSOR };
       repository.findByEmail.mockResolvedValue(null);
@@ -79,6 +74,21 @@ describe('UserService', () => {
           email: 'prof@example.com',
           senha: 'senha1234',
           role: Role.PROFESSOR,
+        }),
+      ).rejects.toThrow(ForbiddenError);
+    });
+
+    it('Professor não pode criar Coordenador', async () => {
+      const actor = { userId: 2, role: Role.PROFESSOR };
+      repository.findByEmail.mockResolvedValue(null);
+
+      await expect(
+        service.create(actor, {
+          nome: 'Coord Teste',
+          email: 'coord@example.com',
+          senha: 'senha1234',
+          role: Role.COORDENADOR,
+          escola_id: 50,
         }),
       ).rejects.toThrow(ForbiddenError);
     });
@@ -138,30 +148,34 @@ describe('UserService', () => {
       );
     });
 
+    it('Coordenador cria Aluno sem herdar escola_id ou coordenador_id', async () => {
+      const actor = { userId: 3, role: Role.COORDENADOR };
+      repository.findByEmail.mockResolvedValue(null);
+      repository.findCoordenadorByUsuarioId.mockResolvedValue({
+        id: 10,
+        usuario_id: 3,
+        escola_id: 99,
+      });
+      repository.createAluno.mockResolvedValue(
+        makeUsuario({
+          role: Role.ALUNO,
+          aluno: { id: 1, usuario_id: 1, turma_id: 1, turno: Turno.MANHA },
+        }),
+      );
+
+      await service.create(actor, alunoPayload);
+
+      const [studentData] = repository.createAluno.mock.calls[0];
+      expect(studentData).not.toHaveProperty('escola_id');
+      expect(studentData).not.toHaveProperty('coordenador_id');
+      expect(studentData).toEqual(expect.objectContaining({ turma_id: 1, turno: Turno.MANHA }));
+    });
+
     it('rejeita email duplicado', async () => {
       const actor = { userId: 2, role: Role.PROFESSOR };
       repository.findByEmail.mockResolvedValue(makeUsuario());
 
       await expect(service.create(actor, alunoPayload)).rejects.toThrow(ConflictError);
-    });
-  });
-
-  describe('getMe', () => {
-    it('retorna o próprio usuário sem senha_hash', async () => {
-      const actor = { userId: 1, role: Role.ALUNO };
-      repository.findById.mockResolvedValue(makeUsuario());
-
-      const result = await service.getMe(actor);
-
-      expect(result).not.toHaveProperty('senha_hash');
-      expect(repository.findById).toHaveBeenCalledWith(1);
-    });
-
-    it('lança NotFoundError se usuário não existir', async () => {
-      const actor = { userId: 1, role: Role.ALUNO };
-      repository.findById.mockResolvedValue(null);
-
-      await expect(service.getMe(actor)).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -190,23 +204,15 @@ describe('UserService', () => {
   });
 
   describe('list', () => {
-    it('apenas Coordenador pode listar usuários', async () => {
-      const aluno = { userId: 1, role: Role.ALUNO };
+    it('retorna a lista de usuários', async () => {
       const coordenador = { userId: 2, role: Role.COORDENADOR };
       repository.list.mockResolvedValue([makeUsuario()]);
 
-      await expect(service.list(aluno)).rejects.toThrow(ForbiddenError);
       await expect(service.list(coordenador)).resolves.toHaveLength(1);
     });
   });
 
   describe('update', () => {
-    it('apenas Coordenador pode atualizar usuários', async () => {
-      const actor = { userId: 1, role: Role.PROFESSOR };
-
-      await expect(service.update(actor, 5, { nome: 'Novo nome' })).rejects.toThrow(ForbiddenError);
-    });
-
     it('lança NotFoundError se usuário alvo não existir', async () => {
       const actor = { userId: 1, role: Role.COORDENADOR };
       repository.findById.mockResolvedValue(null);
@@ -222,19 +228,13 @@ describe('UserService', () => {
 
       await service.update(actor, 5, { senha: 'novaSenha123' });
 
-      const [, , usuarioData] = repository.update.mock.calls[0];
-      expect(usuarioData.senha_hash).toBeDefined();
-      expect(usuarioData.senha_hash).not.toBe('novaSenha123');
+      const [, , userData] = repository.update.mock.calls[0];
+      expect(userData.senha_hash).toBeDefined();
+      expect(userData.senha_hash).not.toBe('novaSenha123');
     });
   });
 
   describe('delete', () => {
-    it('apenas Coordenador pode deletar usuários', async () => {
-      const actor = { userId: 1, role: Role.PROFESSOR };
-
-      await expect(service.delete(actor, 5)).rejects.toThrow(ForbiddenError);
-    });
-
     it('lança NotFoundError se usuário alvo não existir', async () => {
       const actor = { userId: 1, role: Role.COORDENADOR };
       repository.findById.mockResolvedValue(null);

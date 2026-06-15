@@ -3,6 +3,8 @@ import { type ZodTypeProvider } from 'fastify-type-provider-zod';
 import { UserService } from '../models/user/User';
 import { UserRepository } from '../repositories/user/UserRepository';
 import { withErrorHandler } from '../decorators/withErrorHandler';
+import { withRoles } from '../decorators/withRoles';
+import { Role } from '../generated/enums';
 import {
   createUserSchema,
   updateUserSchema,
@@ -22,16 +24,20 @@ export const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
   app.post(
     '/',
     { schema: { body: createUserSchema, response: { 201: safeUserSchema } } },
-    withErrorHandler(async (request, reply) => {
-      const user = await userService.create(request.user!, request.body);
-      return reply.code(201).send(user);
-    }),
+    withErrorHandler(
+      withRoles([Role.PROFESSOR, Role.COORDENADOR])(async (request, reply) => {
+        const user = await userService.create(request.user!, request.body);
+        return reply.code(201).send(user);
+      }),
+    ),
   );
 
   app.get(
     '/',
     { schema: { response: { 200: safeUserListSchema } } },
-    withErrorHandler(async (request) => userService.list(request.user!)),
+    withErrorHandler(
+      withRoles([Role.COORDENADOR])(async (request) => userService.list(request.user!)),
+    ),
   );
 
   app.get(
@@ -49,17 +55,21 @@ export const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
         response: { 200: safeUserSchema },
       },
     },
-    withErrorHandler(async (request) =>
-      userService.update(request.user!, request.params.id, request.body),
+    withErrorHandler(
+      withRoles([Role.COORDENADOR])(async (request) =>
+        userService.update(request.user!, request.params.id, request.body),
+      ),
     ),
   );
 
   app.delete(
     '/:id',
     { schema: { params: userIdParamSchema } },
-    withErrorHandler(async (request, reply) => {
-      await userService.delete(request.user!, request.params.id);
-      return reply.code(204).send();
-    }),
+    withErrorHandler(
+      withRoles([Role.COORDENADOR])(async (request, reply) => {
+        await userService.delete(request.user!, request.params.id);
+        return reply.code(204).send();
+      }),
+    ),
   );
 };

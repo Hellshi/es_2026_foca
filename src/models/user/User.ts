@@ -1,13 +1,21 @@
 import { Role } from '../../generated/enums';
 import {
-  UpdateSubtabelaData,
-  UpdateUsuarioData,
+  UpdateRoleProfileData,
+  UpdateUserData,
   UserRepository,
 } from '../../repositories/user/UserRepository';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from './errors';
 import { hashPassword } from './hash';
-import { createUserSchema, updateUserSchema } from './schemas/user.schema';
-import { AuthenticatedActor, SafeUser, UsuarioComRelacoes } from './types/user.types';
+import {
+  createUserSchema,
+  updateUserSchema,
+  createAlunoRepositoryDataSchema,
+  createProfessorRepositoryDataSchema,
+  createCoordenadorRepositoryDataSchema,
+  updateUserRepositoryDataSchema,
+  updateRoleProfileRepositoryDataSchema,
+} from './schemas/user.schema';
+import { AuthenticatedActor, SafeUser, UserWithRelations } from './types/user.types';
 
 export class UserService {
   constructor(private readonly repository: UserRepository) {}
@@ -19,63 +27,48 @@ export class UserService {
     }
     const payload = parsed.data;
 
-    if (actor.role === Role.ALUNO) {
-      throw new ForbiddenError('Alunos não podem criar usuários');
-    }
-
     const existing = await this.repository.findByEmail(payload.email);
     if (existing) {
       throw new ConflictError();
     }
 
-    const senha_hash = await hashPassword(payload.senha);
+    const passwordHash = await hashPassword(payload.senha);
 
     if (payload.role === Role.ALUNO) {
-      const usuario = await this.repository.createAluno({
-        nome: payload.nome,
-        email: payload.email,
-        senha_hash,
-        turma_id: payload.turma_id,
-        turno: payload.turno,
+      const studentData = createAlunoRepositoryDataSchema.parse({
+        ...payload,
+        senha_hash: passwordHash,
       });
-      return this.toSafeUser(usuario);
+      const user = await this.repository.createAluno(studentData);
+      return this.toSafeUser(user);
     }
 
     if (actor.role !== Role.COORDENADOR) {
       throw new ForbiddenError('Apenas coordenadores podem criar professores ou coordenadores');
     }
 
-    const coordenador = await this.repository.findCoordenadorByUsuarioId(actor.userId);
-    if (!coordenador) {
+    const coordinator = await this.repository.findCoordenadorByUsuarioId(actor.userId);
+    if (!coordinator) {
       throw new ForbiddenError('Coordenador autenticado não encontrado');
     }
 
     if (payload.role === Role.PROFESSOR) {
-      const usuario = await this.repository.createProfessor({
-        nome: payload.nome,
-        email: payload.email,
-        senha_hash,
-        escola_id: coordenador.escola_id,
-        coordenador_id: coordenador.id,
+      const teacherData = createProfessorRepositoryDataSchema.parse({
+        ...payload,
+        senha_hash: passwordHash,
+        escola_id: coordinator.escola_id,
+        coordenador_id: coordinator.id,
       });
-      return this.toSafeUser(usuario);
+      const user = await this.repository.createProfessor(teacherData);
+      return this.toSafeUser(user);
     }
 
-    const usuario = await this.repository.createCoordenador({
-      nome: payload.nome,
-      email: payload.email,
-      senha_hash,
-      escola_id: payload.escola_id,
+    const coordinatorData = createCoordenadorRepositoryDataSchema.parse({
+      ...payload,
+      senha_hash: passwordHash,
     });
-    return this.toSafeUser(usuario);
-  }
-
-  async getMe(actor: AuthenticatedActor): Promise<SafeUser> {
-    const usuario = await this.repository.findById(actor.userId);
-    if (!usuario) {
-      throw new NotFoundError();
-    }
-    return this.toSafeUser(usuario);
+    const user = await this.repository.createCoordenador(coordinatorData);
+    return this.toSafeUser(user);
   }
 
   async getById(actor: AuthenticatedActor, targetId: number): Promise<SafeUser> {
@@ -83,31 +76,23 @@ export class UserService {
       throw new ForbiddenError();
     }
 
-    const usuario = await this.repository.findById(targetId);
-    if (!usuario) {
+    const user = await this.repository.findById(targetId);
+    if (!user) {
       throw new NotFoundError();
     }
-    return this.toSafeUser(usuario);
+    return this.toSafeUser(user);
   }
 
-  async list(actor: AuthenticatedActor): Promise<SafeUser[]> {
-    if (actor.role !== Role.COORDENADOR) {
-      throw new ForbiddenError();
-    }
-
-    const usuarios = await this.repository.list();
-    return usuarios.map((usuario) => this.toSafeUser(usuario));
+  async list(_actor: AuthenticatedActor): Promise<SafeUser[]> {
+    const users = await this.repository.list();
+    return users.map((user) => this.toSafeUser(user));
   }
 
   async update(
-    actor: AuthenticatedActor,
+    _actor: AuthenticatedActor,
     targetId: number,
     rawPayload: unknown,
   ): Promise<SafeUser> {
-    if (actor.role !== Role.COORDENADOR) {
-      throw new ForbiddenError();
-    }
-
     const target = await this.repository.findById(targetId);
     if (!target) {
       throw new NotFoundError();
@@ -126,31 +111,19 @@ export class UserService {
       }
     }
 
-    const usuarioData: UpdateUsuarioData = {
-      nome: payload.nome,
-      email: payload.email,
-      ativo: payload.ativo,
-    };
+    const userData: UpdateUserData = updateUserRepositoryDataSchema.parse(payload);
     if (payload.senha) {
-      usuarioData.senha_hash = await hashPassword(payload.senha);
+      userData.senha_hash = await hashPassword(payload.senha);
     }
 
-    const subtableData: UpdateSubtabelaData = {
-      turma_id: payload.turma_id,
-      turno: payload.turno,
-      escola_id: payload.escola_id,
-      coordenador_id: payload.coordenador_id,
-    };
+    const roleProfileData: UpdateRoleProfileData =
+      updateRoleProfileRepositoryDataSchema.parse(payload);
 
-    const updated = await this.repository.update(targetId, target.role, usuarioData, subtableData);
+    const updated = await this.repository.update(targetId, target.role, userData, roleProfileData);
     return this.toSafeUser(updated);
   }
 
-  async delete(actor: AuthenticatedActor, targetId: number): Promise<void> {
-    if (actor.role !== Role.COORDENADOR) {
-      throw new ForbiddenError();
-    }
-
+  async delete(_actor: AuthenticatedActor, targetId: number): Promise<void> {
     const target = await this.repository.findById(targetId);
     if (!target) {
       throw new NotFoundError();
@@ -159,9 +132,9 @@ export class UserService {
     await this.repository.delete(targetId);
   }
 
-  private toSafeUser(usuario: UsuarioComRelacoes): SafeUser {
+  private toSafeUser(user: UserWithRelations): SafeUser {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { senha_hash, ...safeUser } = usuario;
+    const { senha_hash, ...safeUser } = user;
     return safeUser;
   }
 }

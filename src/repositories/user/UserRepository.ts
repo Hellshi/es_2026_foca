@@ -1,8 +1,8 @@
 import { Prisma, PrismaClient } from '../../generated/client';
 import { Role, Turno } from '../../generated/enums';
-import { UsuarioComRelacoes } from '../../models/user/types/user.types';
+import { UserWithRelations } from '../../models/user/types/user.types';
 
-const INCLUDE_RELACOES = {
+const INCLUDE_RELATIONS = {
   aluno: true,
   professor: true,
   coordenador: true,
@@ -10,7 +10,7 @@ const INCLUDE_RELACOES = {
 
 type TransactionClient = Prisma.TransactionClient;
 
-export type CreateAlunoData = {
+export type CreateStudentData = {
   nome: string;
   email: string;
   senha_hash: string;
@@ -18,7 +18,7 @@ export type CreateAlunoData = {
   turno: Turno;
 };
 
-export type CreateProfessorData = {
+export type CreateTeacherData = {
   nome: string;
   email: string;
   senha_hash: string;
@@ -26,21 +26,21 @@ export type CreateProfessorData = {
   coordenador_id: number;
 };
 
-export type CreateCoordenadorData = {
+export type CreateCoordinatorData = {
   nome: string;
   email: string;
   senha_hash: string;
   escola_id: number;
 };
 
-export type UpdateUsuarioData = {
+export type UpdateUserData = {
   nome?: string;
   email?: string;
   senha_hash?: string;
   ativo?: boolean;
 };
 
-export type UpdateSubtabelaData = {
+export type UpdateRoleProfileData = {
   turma_id?: number;
   turno?: Turno;
   escola_id?: number;
@@ -50,17 +50,17 @@ export type UpdateSubtabelaData = {
 export class UserRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  findById(id: number): Promise<UsuarioComRelacoes | null> {
+  findById(id: number): Promise<UserWithRelations | null> {
     return this.prisma.usuario.findUnique({
       where: { id },
-      include: INCLUDE_RELACOES,
+      include: INCLUDE_RELATIONS,
     });
   }
 
-  findByEmail(email: string): Promise<UsuarioComRelacoes | null> {
+  findByEmail(email: string): Promise<UserWithRelations | null> {
     return this.prisma.usuario.findUnique({
       where: { email },
-      include: INCLUDE_RELACOES,
+      include: INCLUDE_RELATIONS,
     });
   }
 
@@ -70,14 +70,14 @@ export class UserRepository {
     });
   }
 
-  list(): Promise<UsuarioComRelacoes[]> {
+  list(): Promise<UserWithRelations[]> {
     return this.prisma.usuario.findMany({
-      include: INCLUDE_RELACOES,
+      include: INCLUDE_RELATIONS,
       orderBy: { id: 'asc' },
     });
   }
 
-  createAluno(data: CreateAlunoData): Promise<UsuarioComRelacoes> {
+  createAluno(data: CreateStudentData): Promise<UserWithRelations> {
     return this.prisma.$transaction(async (tx: TransactionClient) => {
       const usuario = await tx.usuario.create({
         data: {
@@ -100,7 +100,7 @@ export class UserRepository {
     });
   }
 
-  createProfessor(data: CreateProfessorData): Promise<UsuarioComRelacoes> {
+  createProfessor(data: CreateTeacherData): Promise<UserWithRelations> {
     return this.prisma.$transaction(async (tx: TransactionClient) => {
       const usuario = await tx.usuario.create({
         data: {
@@ -123,7 +123,7 @@ export class UserRepository {
     });
   }
 
-  createCoordenador(data: CreateCoordenadorData): Promise<UsuarioComRelacoes> {
+  createCoordenador(data: CreateCoordinatorData): Promise<UserWithRelations> {
     return this.prisma.$transaction(async (tx: TransactionClient) => {
       const usuario = await tx.usuario.create({
         data: {
@@ -148,13 +148,13 @@ export class UserRepository {
   async update(
     id: number,
     role: Role,
-    usuarioData: UpdateUsuarioData,
-    subtableData: UpdateSubtabelaData,
-  ): Promise<UsuarioComRelacoes> {
+    userData: UpdateUserData,
+    subtableData: UpdateRoleProfileData,
+  ): Promise<UserWithRelations> {
     return this.prisma.$transaction(async (tx: TransactionClient) => {
       await tx.usuario.update({
         where: { id },
-        data: usuarioData,
+        data: userData,
       });
 
       if (
@@ -192,7 +192,7 @@ export class UserRepository {
 
       return tx.usuario.findUniqueOrThrow({
         where: { id },
-        include: INCLUDE_RELACOES,
+        include: INCLUDE_RELATIONS,
       });
     });
   }
