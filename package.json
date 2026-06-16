@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
-"scripts": {
+  "scripts": {
     "test": "jest",
     "test:coverage": "jest --coverage",
     "start": "npm run build:ts && fastify start -l info dist/app.js",
@@ -39,6 +39,8 @@
   "dependencies": {
     "@fastify/autoload": "^6.0.0",
     "@fastify/sensible": "^6.0.0",
+    "@fastify/swagger": "^9.7.0",
+    "@fastify/swagger-ui": "^6.0.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcryptjs": "^3.0.3",

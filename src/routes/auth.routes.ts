@@ -10,6 +10,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
     '/login',
     {
       schema: {
+        tags: ['Auth'],
         response: { 200: loginResponseSchema },
       },
     },

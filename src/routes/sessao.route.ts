@@ -50,6 +50,8 @@ export const sessaoRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     '/',
     {
       schema: {
+        tags: ['Sessoes'],
+        security: [{ bearerAuth: [] }],
         body: z.object({ disciplina_id: z.number().int().positive() }),
         response: { 201: sessaoSchema },
       },
@@ -75,7 +77,14 @@ export const sessaoRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
 
   app.patch(
     '/:id/iniciar',
-    { schema: { params: paramsIdSchema, response: { 200: sessaoSchema } } },
+    {
+      schema: {
+        tags: ['Sessoes'],
+        security: [{ bearerAuth: [] }],
+        params: paramsIdSchema,
+        response: { 200: sessaoSchema },
+      },
+    },
     withErrorHandler(
       onlyAluno(async (request, reply) => {
         const alunoId = await resolveAlunoId(request.user!.userId);
@@ -89,6 +98,8 @@ export const sessaoRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     '/:id/pausar',
     {
       schema: {
+        tags: ['Sessoes'],
+        security: [{ bearerAuth: [] }],
         params: paramsIdSchema,
         body: z.object({ tempo_total_seg: z.number().int().min(0) }),
         response: {
@@ -121,7 +132,14 @@ export const sessaoRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
 
   app.patch(
     '/:id/retomar',
-    { schema: { params: paramsIdSchema, response: { 200: sessaoSchema } } },
+    {
+      schema: {
+        tags: ['Sessoes'],
+        security: [{ bearerAuth: [] }],
+        params: paramsIdSchema,
+        response: { 200: sessaoSchema },
+      },
+    },
     withErrorHandler(
       onlyAluno(async (request, reply) => {
         const alunoId = await resolveAlunoId(request.user!.userId);
@@ -135,6 +153,8 @@ export const sessaoRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     '/:id/concluir',
     {
       schema: {
+        tags: ['Sessoes'],
+        security: [{ bearerAuth: [] }],
         params: paramsIdSchema,
         body: z.object({ tempo_total_seg: z.number().int().min(0) }),
         response: { 200: z.object({ sessao: sessaoSchema, status: statusSessaoEnum }) },
@@ -157,6 +177,8 @@ export const sessaoRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     '/hoje',
     {
       schema: {
+        tags: ['Sessoes'],
+        security: [{ bearerAuth: [] }],
         response: {
           200: z.object({
             data: z.array(sessaoSchema),
@@ -190,6 +212,8 @@ export const sessaoRoutes: FastifyPluginAsync = async (fastify): Promise<void> =
     '/historico',
     {
       schema: {
+        tags: ['Sessoes'],
+        security: [{ bearerAuth: [] }],
         querystring: z.object({
           page: z.coerce.number().int().positive().default(1),
           limit: z.coerce.number().int().positive().max(100).default(20),

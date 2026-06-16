@@ -18,7 +18,7 @@ export const disciplinaRoutes: FastifyPluginAsync = async (fastify): Promise<voi
 
   app.get(
     '/',
-    { schema: { response: { 200: z.array(disciplinaSchema) } } },
+    { schema: { tags: ['Disciplinas'], response: { 200: z.array(disciplinaSchema) } } },
     withErrorHandler(async (_request, reply) => {
       const disciplinas = await disciplinaService.listar();
       return reply.send(disciplinas);
