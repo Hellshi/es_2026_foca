@@ -18,6 +18,8 @@ declare module 'fastify' {
 const authenticatorPlugin: FastifyPluginAsync = fp(async (fastify) => {
   const authenticator = new AuthenticatorAdapter(process.env.JWT_SECRET as string, jwt);
 
+  fastify.decorate('authenticator', authenticator);
+
   fastify.decorate('authenticate', async (request: FastifyRequest, _reply: FastifyReply) => {
     const [, token] = request.headers.authorization?.split(' ') ?? [];
 

@@ -10,7 +10,11 @@ export class AuthenticatorAdapter {
     this.authenticator = authenticator;
   }
 
-  async authenticate(payload: any): Promise<any> {}
+  async authenticate(payload: AuthorizeResponse): Promise<string> {
+    return this.authenticator.sign({ userId: payload.userId, role: payload.role }, this.secretKey, {
+      expiresIn: '7d',
+    }) as string;
+  }
 
   async authorize(token: string): Promise<AuthorizeResponse> {
     const decoded = this.authenticator.verify(token, this.secretKey) as AuthorizeResponse;
