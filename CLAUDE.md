@@ -1,6 +1,6 @@
 # FOCA AI Rules Index
 
-Read this first. Open only referenced best-practice files for current task. Do not load all by default.
+Read this first. Open only referenced tasks files for current task and testing, if needed check the source of truth as explained bellow. Architectural decisions and tests decisions also have it's onw files. Do not load all by default.
 
 ## Non-Negotiables
 
@@ -35,3 +35,4 @@ Read this first. Open only referenced best-practice files for current task. Do n
 - Always start checking newest versions first; their named with VNUmberOfVersion;
 - Architecture decision can be found in `./architecture.md`
 - Testing advices are in `./testing.md`
+- Tasks breakdown live in `./tasks`
