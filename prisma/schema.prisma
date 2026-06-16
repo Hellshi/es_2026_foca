@@ -42,26 +42,11 @@ model Usuario {
   @@map("usuario")
 }
 
-model Escola {
-  id           Int           @id @default(autoincrement())
-  nome         String        @db.VarChar(150)
-  cnpj         String        @unique @db.VarChar(18)
-
-  coordenadores Coordenador[]
-  professores   Professor[]
-  turmas        Turma[]
-  disciplinas   Disciplina[]
-
-  @@map("escola")
-}
-
 model Coordenador {
   id         Int @id @default(autoincrement())
   usuario_id Int @unique
-  escola_id  Int
 
   usuario     Usuario     @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
-  escola      Escola      @relation(fields: [escola_id], references: [id], onDelete: Cascade)
   professores Professor[]
 
   @@map("coordenador")
@@ -70,44 +55,33 @@ model Coordenador {
 model Professor {
   id             Int  @id @default(autoincrement())
   usuario_id     Int  @unique
-  escola_id      Int
   coordenador_id Int?
 
   usuario     Usuario          @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
-  escola      Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
   coordenador Coordenador?     @relation(fields: [coordenador_id], references: [id], onDelete: SetNull)
   turmas      ProfessorTurma[]
 
-  @@index([escola_id])
   @@index([coordenador_id])
   @@map("professor")
 }
 
 model Turma {
   id         Int    @id @default(autoincrement())
-  escola_id  Int
   nome       String @db.VarChar(50)
   ano_letivo Int
 
-  escola      Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
   alunos      Aluno[]
   professores ProfessorTurma[]
 
-  @@index([escola_id])
   @@map("turma")
 }
 
 model Disciplina {
-  id                    Int    @id @default(autoincrement())
-  escola_id             Int
-  nome                  String @db.VarChar(100)
-  carga_horaria_semanal Int
+  id   Int    @id @default(autoincrement())
+  nome String @unique @db.VarChar(100)
 
-  escola      Escola           @relation(fields: [escola_id], references: [id], onDelete: Cascade)
   professores ProfessorTurma[]
 
-  @@unique([escola_id, nome])
-  @@index([escola_id])
   @@map("disciplina")
 }
 

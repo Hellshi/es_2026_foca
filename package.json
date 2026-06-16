@@ -33,6 +33,9 @@
     "url": "https://github.com/Hellshi/es_2026_foca/issues"
   },
   "homepage": "https://github.com/Hellshi/es_2026_foca#readme",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@fastify/autoload": "^6.0.0",
     "@fastify/sensible": "^6.0.0",

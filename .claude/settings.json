@@ -8,7 +8,12 @@
       "Bash(npx eslint *)",
       "Bash(npx jest *)",
       "Bash(npx tsx *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(npx prisma *)",
+      "Bash(docker start *)",
+      "Bash(docker-compose -f /home/hell/es_2026_foca/docker-compose/postgres.docker-compose.yml up -d)",
+      "Bash(PRISMA_MIGRATE_SKIP_GENERATE=true npx prisma migrate dev --name remove_escola_fix_disciplinas)",
+      "Bash(npm test *)"
     ]
   }
 }

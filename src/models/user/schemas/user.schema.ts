@@ -19,7 +19,6 @@ export const createProfessorSchema = baseUserSchema.extend({
 
 export const createCoordenadorSchema = baseUserSchema.extend({
   role: z.literal(Role.COORDENADOR),
-  escola_id: z.number().int().positive(),
 });
 
 export const createUserSchema = z.discriminatedUnion('role', [
@@ -36,7 +35,6 @@ export const updateUserSchema = z
     ativo: z.boolean().optional(),
     turma_id: z.number().int().positive().optional(),
     turno: z.enum(Turno).optional(),
-    escola_id: z.number().int().positive().optional(),
     coordenador_id: z.number().int().positive().nullable().optional(),
   })
   .strict();
@@ -49,7 +47,6 @@ export const createProfessorRepositoryDataSchema = createProfessorSchema
   .omit({ role: true, senha: true })
   .extend({
     senha_hash: z.string(),
-    escola_id: z.number().int().positive(),
     coordenador_id: z.number().int().positive(),
   });
 
@@ -62,7 +59,7 @@ export const updateUserRepositoryDataSchema = updateUserSchema
   .strip();
 
 export const updateRoleProfileRepositoryDataSchema = updateUserSchema
-  .pick({ turma_id: true, turno: true, escola_id: true, coordenador_id: true })
+  .pick({ turma_id: true, turno: true, coordenador_id: true })
   .strip();
 
 export const userIdParamSchema = z.object({
@@ -79,14 +76,12 @@ const alunoRelationSchema = z.object({
 const professorRelationSchema = z.object({
   id: z.number().int(),
   usuario_id: z.number().int(),
-  escola_id: z.number().int(),
   coordenador_id: z.number().int().nullable(),
 });
 
 const coordenadorRelationSchema = z.object({
   id: z.number().int(),
   usuario_id: z.number().int(),
-  escola_id: z.number().int(),
 });
 
 export const safeUserSchema = z.object({

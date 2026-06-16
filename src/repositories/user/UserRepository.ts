@@ -22,7 +22,6 @@ export type CreateTeacherData = {
   nome: string;
   email: string;
   senha_hash: string;
-  escola_id: number;
   coordenador_id: number;
 };
 
@@ -30,7 +29,6 @@ export type CreateCoordinatorData = {
   nome: string;
   email: string;
   senha_hash: string;
-  escola_id: number;
 };
 
 export type UpdateUserData = {
@@ -43,7 +41,6 @@ export type UpdateUserData = {
 export type UpdateRoleProfileData = {
   turma_id?: number;
   turno?: Turno;
-  escola_id?: number;
   coordenador_id?: number | null;
 };
 
@@ -114,7 +111,6 @@ export class UserRepository {
       const professor = await tx.professor.create({
         data: {
           usuario_id: usuario.id,
-          escola_id: data.escola_id,
           coordenador_id: data.coordenador_id,
         },
       });
@@ -137,7 +133,6 @@ export class UserRepository {
       const coordenador = await tx.coordenador.create({
         data: {
           usuario_id: usuario.id,
-          escola_id: data.escola_id,
         },
       });
 
@@ -170,23 +165,12 @@ export class UserRepository {
         });
       }
 
-      if (
-        role === Role.PROFESSOR &&
-        (subtableData.escola_id !== undefined || subtableData.coordenador_id !== undefined)
-      ) {
+      if (role === Role.PROFESSOR && subtableData.coordenador_id !== undefined) {
         await tx.professor.update({
           where: { usuario_id: id },
           data: {
-            escola_id: subtableData.escola_id,
             coordenador_id: subtableData.coordenador_id,
           },
-        });
-      }
-
-      if (role === Role.COORDENADOR && subtableData.escola_id !== undefined) {
-        await tx.coordenador.update({
-          where: { usuario_id: id },
-          data: { escola_id: subtableData.escola_id },
         });
       }
 

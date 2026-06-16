@@ -110,7 +110,7 @@ describe('user routes', () => {
     const usuario = makeUsuario({
       role: Role.PROFESSOR,
       aluno: null,
-      professor: { id: 1, usuario_id: 1, escola_id: 1, coordenador_id: null },
+      professor: { id: 1, usuario_id: 1, coordenador_id: null },
     });
     const prisma = {
       usuario: {
