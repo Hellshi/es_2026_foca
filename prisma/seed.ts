@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../src/generated/client';
+import { PrismaClient, Role, Turno } from '../src/generated/client';
+import bcrypt from 'bcryptjs';
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -22,7 +23,15 @@ const disciplinas = [
   'Química',
 ];
 
-async function main() {
+const SEED_PASSWORD = 'senha123';
+
+const seedUsers = [
+  { nome: 'Coordenador Seed', email: 'coordenador@foca.dev', role: Role.COORDENADOR },
+  { nome: 'Professor Seed', email: 'professor@foca.dev', role: Role.PROFESSOR },
+  { nome: 'Aluno Seed', email: 'aluno@foca.dev', role: Role.ALUNO },
+];
+
+async function seedDisciplinas() {
   for (const nome of disciplinas) {
     await prisma.disciplina.upsert({
       where: { nome },
@@ -30,6 +39,58 @@ async function main() {
       create: { nome },
     });
   }
+}
+
+async function seedUsers_() {
+  const senhaHash = await bcrypt.hash(SEED_PASSWORD, 10);
+
+  const turma = await prisma.turma.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { nome: 'Turma Seed', ano_letivo: new Date().getFullYear() },
+  });
+
+  for (const { nome, email, role } of seedUsers) {
+    const usuario = await prisma.usuario.upsert({
+      where: { email },
+      update: {},
+      create: { nome, email, senha_hash: senhaHash, role },
+    });
+
+    if (role === Role.COORDENADOR) {
+      await prisma.coordenador.upsert({
+        where: { usuario_id: usuario.id },
+        update: {},
+        create: { usuario_id: usuario.id },
+      });
+    }
+
+    if (role === Role.PROFESSOR) {
+      await prisma.professor.upsert({
+        where: { usuario_id: usuario.id },
+        update: {},
+        create: { usuario_id: usuario.id },
+      });
+    }
+
+    if (role === Role.ALUNO) {
+      await prisma.aluno.upsert({
+        where: { usuario_id: usuario.id },
+        update: {},
+        create: { usuario_id: usuario.id, turma_id: turma.id, turno: Turno.MANHA },
+      });
+    }
+  }
+
+  console.log('\nUsuários de seed criados (senha: senha123):');
+  for (const { email, role } of seedUsers) {
+    console.log(`  [${role}] ${email}`);
+  }
+}
+
+async function main() {
+  await seedDisciplinas();
+  await seedUsers_();
 }
 
 main()

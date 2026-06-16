@@ -1,23 +1,82 @@
-# Getting Started with [Fastify-CLI](https://www.npmjs.com/package/fastify-cli)
-This project was bootstrapped with Fastify-CLI.
+# FOCA — Sistema de Gestão Acadêmica
 
-## Available Scripts
+API REST desenvolvida com Fastify, Prisma e PostgreSQL.
 
-In the project directory, you can run:
+## Pré-requisitos
 
-### `npm run dev`
+- [Node.js](https://nodejs.org/) v18+
+- [npm](https://www.npmjs.com/)
+- [Docker](https://www.docker.com/) e Docker Compose
 
-To start the app in dev mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Rodando o projeto localmente
 
-### `npm start`
+### 1. Instale as dependências
 
-For production mode
+```bash
+npm install
+```
 
-### `npm run test`
+### 2. Suba o banco de dados
 
-Run the test cases.
+```bash
+docker compose -f docker-compose/postgres.docker-compose.yml up -d
+```
 
-## Learn More
+### 3. Configure as variáveis de ambiente
 
-To learn Fastify, check out the [Fastify documentation](https://fastify.dev/docs/latest/).
+Crie um arquivo `.env` na raiz do projeto com o seguinte conteúdo:
+
+```env
+DATABASE_URL="postgresql://foca_user:password@localhost:3015/foca"
+JWT_SECRET="sua-chave-secreta-aqui"
+SESSAO_DURACAO_MAXIMA_SEG=3600
+SESSAO_MAX_DISCIPLINAS_DIA=3
+SESSAO_MAX_POR_DISCIPLINA_DIA=1
+```
+
+### 4. Rode as migrations e o seed
+
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+O seed cria automaticamente um usuário por role para testes manuais:
+
+| Role | Email | Senha |
+|---|---|---|
+| COORDENADOR | coordenador@foca.dev | senha123 |
+| PROFESSOR | professor@foca.dev | senha123 |
+| ALUNO | aluno@foca.dev | senha123 |
+
+### 5. Inicie o servidor em modo desenvolvimento
+
+```bash
+npm run dev
+```
+
+A API ficará disponível em `http://localhost:3000`.
+
+### Documentação interativa (Swagger)
+
+Acesse `http://localhost:3000/docs` para explorar e testar os endpoints via Swagger UI.
+
+---
+
+## Scripts disponíveis
+
+| Comando | Descrição |
+|---|---|
+| `npm run dev` | Inicia em modo desenvolvimento com hot-reload |
+| `npm start` | Build e inicia em modo produção |
+| `npm test` | Roda os testes unitários |
+| `npm run test:coverage` | Roda os testes com relatório de cobertura |
+| `npm run lint` | Verifica problemas de lint |
+| `npm run lint:fix` | Corrige problemas de lint automaticamente |
+
+---
+
+## Recursos
+
+- [Fastify Documentation](https://fastify.dev/docs/latest/)
+- [Prisma Documentation](https://www.prisma.io/docs)
