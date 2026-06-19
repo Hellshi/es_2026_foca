@@ -23,7 +23,14 @@ export const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
 
   app.post(
     '/',
-    { schema: { body: createUserSchema, response: { 201: safeUserSchema } } },
+    {
+      schema: {
+        tags: ['Users'],
+        security: [{ bearerAuth: [] }],
+        body: createUserSchema,
+        response: { 201: safeUserSchema },
+      },
+    },
     withErrorHandler(
       withRoles([Role.PROFESSOR, Role.COORDENADOR])(async (request, reply) => {
         const user = await userService.create(request.user!, request.body);
@@ -34,7 +41,13 @@ export const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
 
   app.get(
     '/',
-    { schema: { response: { 200: safeUserListSchema } } },
+    {
+      schema: {
+        tags: ['Users'],
+        security: [{ bearerAuth: [] }],
+        response: { 200: safeUserListSchema },
+      },
+    },
     withErrorHandler(
       withRoles([Role.COORDENADOR])(async (request) => userService.list(request.user!)),
     ),
@@ -42,7 +55,14 @@ export const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
 
   app.get(
     '/:id',
-    { schema: { params: userIdParamSchema, response: { 200: safeUserSchema } } },
+    {
+      schema: {
+        tags: ['Users'],
+        security: [{ bearerAuth: [] }],
+        params: userIdParamSchema,
+        response: { 200: safeUserSchema },
+      },
+    },
     withErrorHandler(async (request) => userService.getById(request.user!, request.params.id)),
   );
 
@@ -50,6 +70,8 @@ export const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
     '/:id',
     {
       schema: {
+        tags: ['Users'],
+        security: [{ bearerAuth: [] }],
         params: userIdParamSchema,
         body: updateUserSchema,
         response: { 200: safeUserSchema },
@@ -64,7 +86,7 @@ export const userRoutes: FastifyPluginAsync = async (fastify): Promise<void> => 
 
   app.delete(
     '/:id',
-    { schema: { params: userIdParamSchema } },
+    { schema: { tags: ['Users'], security: [{ bearerAuth: [] }], params: userIdParamSchema } },
     withErrorHandler(
       withRoles([Role.COORDENADOR])(async (request, reply) => {
         await userService.delete(request.user!, request.params.id);

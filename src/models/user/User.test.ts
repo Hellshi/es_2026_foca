@@ -88,23 +88,21 @@ describe('UserService', () => {
           email: 'coord@example.com',
           senha: 'senha1234',
           role: Role.COORDENADOR,
-          escola_id: 50,
         }),
       ).rejects.toThrow(ForbiddenError);
     });
 
-    it('Coordenador cria Professor herdando escola e vínculo do coordenador', async () => {
+    it('Coordenador cria Professor herdando vínculo do coordenador', async () => {
       const actor = { userId: 3, role: Role.COORDENADOR };
       repository.findByEmail.mockResolvedValue(null);
       repository.findCoordenadorByUsuarioId.mockResolvedValue({
         id: 10,
         usuario_id: 3,
-        escola_id: 99,
       });
       repository.createProfessor.mockResolvedValue(
         makeUsuario({
           role: Role.PROFESSOR,
-          professor: { id: 1, usuario_id: 1, escola_id: 99, coordenador_id: 10 },
+          professor: { id: 1, usuario_id: 1, coordenador_id: 10 },
         }),
       );
 
@@ -116,22 +114,21 @@ describe('UserService', () => {
       });
 
       expect(repository.createProfessor).toHaveBeenCalledWith(
-        expect.objectContaining({ escola_id: 99, coordenador_id: 10 }),
+        expect.objectContaining({ coordenador_id: 10 }),
       );
     });
 
-    it('Coordenador cria Coordenador usando escola_id do payload', async () => {
+    it('Coordenador pode criar outro Coordenador', async () => {
       const actor = { userId: 3, role: Role.COORDENADOR };
       repository.findByEmail.mockResolvedValue(null);
       repository.findCoordenadorByUsuarioId.mockResolvedValue({
         id: 10,
         usuario_id: 3,
-        escola_id: 99,
       });
       repository.createCoordenador.mockResolvedValue(
         makeUsuario({
           role: Role.COORDENADOR,
-          coordenador: { id: 2, usuario_id: 1, escola_id: 50 },
+          coordenador: { id: 2, usuario_id: 1 },
         }),
       );
 
@@ -140,21 +137,17 @@ describe('UserService', () => {
         email: 'coord@example.com',
         senha: 'senha1234',
         role: Role.COORDENADOR,
-        escola_id: 50,
       });
 
-      expect(repository.createCoordenador).toHaveBeenCalledWith(
-        expect.objectContaining({ escola_id: 50 }),
-      );
+      expect(repository.createCoordenador).toHaveBeenCalled();
     });
 
-    it('Coordenador cria Aluno sem herdar escola_id ou coordenador_id', async () => {
+    it('Coordenador cria Aluno sem herdar coordenador_id', async () => {
       const actor = { userId: 3, role: Role.COORDENADOR };
       repository.findByEmail.mockResolvedValue(null);
       repository.findCoordenadorByUsuarioId.mockResolvedValue({
         id: 10,
         usuario_id: 3,
-        escola_id: 99,
       });
       repository.createAluno.mockResolvedValue(
         makeUsuario({
@@ -166,7 +159,6 @@ describe('UserService', () => {
       await service.create(actor, alunoPayload);
 
       const [studentData] = repository.createAluno.mock.calls[0];
-      expect(studentData).not.toHaveProperty('escola_id');
       expect(studentData).not.toHaveProperty('coordenador_id');
       expect(studentData).toEqual(expect.objectContaining({ turma_id: 1, turno: Turno.MANHA }));
     });

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { PrismaClient } from '../../generated/client';
 import { Role, Turno } from '../../generated/enums';
 import { UserRepository } from './UserRepository';
@@ -14,6 +15,7 @@ function createPrismaMock() {
     coordenador: { create: jest.fn(), update: jest.fn() },
   };
 
+  // @ts-ignore circular ref in mock is intentional
   const prisma = {
     usuario: {
       findUnique: jest.fn(),
@@ -23,7 +25,8 @@ function createPrismaMock() {
     coordenador: {
       findUnique: jest.fn(),
     },
-    $transaction: jest.fn((callback: (tx: typeof prisma.tx) => unknown) => callback(tx)),
+    // @ts-ignore
+    $transaction: jest.fn((callback: (tx: typeof tx) => unknown) => callback(tx)),
     tx,
   };
 
@@ -76,12 +79,11 @@ describe('UserRepository', () => {
     expect(result.aluno).toEqual({ id: 1, usuario_id: 1, turma_id: 2, turno: Turno.MANHA });
   });
 
-  it('createProfessor cria Usuario e Professor herdando escola/coordenador', async () => {
+  it('createProfessor cria Usuario e Professor com vínculo de coordenador', async () => {
     prisma.tx.usuario.create.mockResolvedValue({ id: 1, role: Role.PROFESSOR });
     prisma.tx.professor.create.mockResolvedValue({
       id: 1,
       usuario_id: 1,
-      escola_id: 99,
       coordenador_id: 10,
     });
 
@@ -89,14 +91,13 @@ describe('UserRepository', () => {
       nome: 'Professor',
       email: 'professor@example.com',
       senha_hash: 'hash',
-      escola_id: 99,
       coordenador_id: 10,
     });
 
     expect(prisma.tx.professor.create).toHaveBeenCalledWith({
-      data: { usuario_id: 1, escola_id: 99, coordenador_id: 10 },
+      data: { usuario_id: 1, coordenador_id: 10 },
     });
-    expect(result.professor).toEqual({ id: 1, usuario_id: 1, escola_id: 99, coordenador_id: 10 });
+    expect(result.professor).toEqual({ id: 1, usuario_id: 1, coordenador_id: 10 });
   });
 
   it('update atualiza Usuario e subtabela conforme o role', async () => {

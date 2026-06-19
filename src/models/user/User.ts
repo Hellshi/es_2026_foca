@@ -56,7 +56,6 @@ export class UserService {
       const teacherData = createProfessorRepositoryDataSchema.parse({
         ...payload,
         senha_hash: passwordHash,
-        escola_id: coordinator.escola_id,
         coordenador_id: coordinator.id,
       });
       const user = await this.repository.createProfessor(teacherData);
